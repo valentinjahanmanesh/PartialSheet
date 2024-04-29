@@ -12,66 +12,60 @@
 
 A custom SwiftUI modifier to present a Partial Modal Sheet based on his content size.
 
-**Version 3.0 has been released, there are a lot of breaking changes, make sure to read the guide before update!**
+**Version 2.0 has been released, there are a lot of breaking changes, make sure to read the guide before update!**
+
 
 ## Index
 
 - [Features](#features)
-- [Version 3](#version-3)
+- [Version 2](#version-2)
 - [Installation](#installation)
 - [How To Use](#how-to-use)
 - [Wiki - Full Guide](https://github.com/AndreaMiotto/PartialSheet/wiki)
-- [Version 2](#version-2)
 
 
 ## iPhone Preview
 
-| Dynamic Height | Scrollable Content | Pickers Compatible
---|--|--
-<video src="https://user-images.githubusercontent.com/11211914/156180442-0f17b29a-8a7f-4655-a74b-9ef8c58f5b7c.mov">|<video src="https://user-images.githubusercontent.com/11211914/156180453-eaebb944-14d9-4994-b4d2-2adb45e1e136.mov">|<video src="https://user-images.githubusercontent.com/11211914/156180464-52cf9a21-e892-4e1e-bfde-a36d3324977b.mov">
+<img src="https://user-images.githubusercontent.com/11211914/68700576-6c100580-0585-11ea-847b-99f0450311a4.gif" width="250"><img src="https://user-images.githubusercontent.com/11211914/68700574-6c100580-0585-11ea-9727-8a02ec36b118.gif" width="250">
 
-## iPad & Mac Preview
-  
-iPad Version | Mac Version
---|--
-<img src="https://user-images.githubusercontent.com/11211914/79673521-af019380-821d-11ea-82f5-49d75e83d7c0.png" width="500"> | <img src="https://user-images.githubusercontent.com/11211914/79673482-7eb9f500-821d-11ea-93e0-60fc32e554ee.png" width="600">
+## iPad Preview
+<img src="https://user-images.githubusercontent.com/11211914/79673521-af019380-821d-11ea-82f5-49d75e83d7c0.png" width="500">
+
+## Mac Preview
+<img src="https://user-images.githubusercontent.com/11211914/79673482-7eb9f500-821d-11ea-93e0-60fc32e554ee.png" width="600">
 
 
 ## Features
 
 #### Availables
-- \[x] Slidable and dismissable with drag gesture
-- \[x] Variable height based on his content
-- \[x] Allow scrollable contents
-- \[x] Compatible with pickers
-- \[x] Customizable colors
+- \[x]  Slidable and dismissable with drag gesture
+- \[x]  Variable height based on his content
+- \[x]  Customizable colors
 - \[x] Keyboard compatibility
-- \[x] Landscape compatibility
-- \[x] iOS compatibility
+- \[x]  Landscape compatibility
+- \[x]  iOS compatibility
 - \[x] iPad compatibility
 - \[x] Mac compatibility
 
 #### Nice to have
-At the moment we developed all the most requested features, feel free to open an issue if you feel something is missing.
+- \[ ] ScrollView and List compatibility: as soon as Apple adds some API to handle better ScrollViews
 
-## Version 3
+## Version 2
 The new version brings a lot of breaking changes and a lot of improvments:
-- A more **SwiftUI way** to call the PartialSheet.
-- Add support to **scrollable content**.
-- Add support to **Material** effect.
-- A new **Button** to avoid the *rage tapping*.
-- More Support for the pickers.
+- The Partial Sheet can now be called from any view in the *navigation stack*
+- The Partial Sheet can now be called from any item inside a *List*
+- The Partial Sheet is now handled as an *environment object* making easy to display and close it.
 
 ## Installation
 
 #### Requirements
-- iOS 15.0+ / macOS 12.0+
-- Xcode 13+
+- iOS 13.0+ / macOS 10.15+
+- Xcode 11.2+
 - Swift 5+
 
 #### Via Swift Package Manager
 
-In Xcode 13 or grater, in you project, select: `File > Add Pacakages`.
+In Xcode 11 or grater, in you project, select: `File > Swift Packages > Add Pacakage Dependency`.
 
 In the search bar type **PartialSheet** and when you find the package, with the **next** button you can proceed with the installation.
 
@@ -82,33 +76,162 @@ You can do that under the **Preferences** panel of your Xcode, in the **Accounts
 
 *You can read more on the [wiki - full guide](https://github.com/AndreaMiotto/PartialSheet/wiki).*
 
-To use the **Partial Sheet** you need to follow just two simple steps
+To use the **Partial Sheet** you need to follow just three simple steps
 
-1. Attach the **Partial Sheet** instance to your Root View in you
+1. Add a **Partial Sheet Manager** instance as an *environment object* to your Root View in you *SceneDelegate*
 ```Swift
-rootView.attachPartialSheetToRoot()
+// 1.1 Create the manager
+let sheetManager: PartialSheetManager = PartialSheetManager()
+let contentView = ContentView()
+    // 1.2 Add the manager as environmentObject
+    .environmentObject(sheetManager)
+
+//Common SwiftUI code to add the rootView in your rootViewController
+if let windowScene = scene as? UIWindowScene {
+    let window = UIWindow(windowScene: windowScene)
+    window.rootViewController = UIHostingController(
+        rootView: contentView
+    )
+    self.window = window
+    window.makeKeyAndVisible()
+}
 ```
-2. Then in any view on the hierarchy you can use:
+2. Add the **Partial View** to your *Root View*, and if you want give it a style. In your RootView file at the end of the builder add the following modifier:
 
 ```Swift
-view
-    .partialSheet(isPresented: $isPresented) {
-        Text("Content of the Sheet")
-     }
+struct ContentView: View {
+
+    var body: some View {
+       ...
+       .addPartialSheet(style: <PartialSheetStyle>)
+    }
+}
 ```
 
-You can also use the **PSButton** to avoid the rage tapping:
+3. In anyone of your views add a reference to the *environment object* and than just call the `showPartialSheet<T>(_ onDismiss: (() -> Void)? = nil, @ViewBuilder content: @escaping () -> T) where T: View` func whenever you want like this:
+
 ```Swift
-PSButton(
-    isPresenting: $isSheetPresented,
-    label: {
-        Text("Display the Partial Sheet")
-    })
+@EnvironmentObject var partialSheetManager: PartialSheetManager
+
+...
+
+Button(action: {
+    self.partialSheetManager.showPartialSheet({
+        print("Partial sheet dismissed")
+    }) {
+         Text("This is a Partial Sheet")
+    }
+}, label: {
+    Text("Show sheet")
+})
 ```
 
+You can also show the Partial Sheet using a *view modifier*:
+```Swift
+@State var isSheetShown = false
+
+...
+
+Button(action: {
+    self.isSheetShown = true
+}, label: {
+    Text("Display the ViewModifier sheet")
+})
+.partialSheet(isPresented: $isSheetShown) {
+    Text("This is a Partial Sheet")
+}
+```
+
+If you want a starting point copy in your SceneDelegate and in your ContentView files the following code:
+
+1. SceneDelegate:
+
+```Swift
+func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+    let sheetManager: PartialSheetManager = PartialSheetManager()
+    let contentView = ContentView()
+        .environmentObject(sheetManager)
+    if let windowScene = scene as? UIWindowScene {
+        let window = UIWindow(windowScene: windowScene)
+        window.rootViewController = UIHostingController(
+            rootView: contentView
+        )
+        self.window = window
+        window.makeKeyAndVisible()
+    }
+}
+```
+
+2. ContentView:
+
+```Swift
+import SwiftUI
+import PartialSheet
+
+struct ContentView: View {
+
+    @EnvironmentObject var partialSheet : PartialSheetManager
+
+    var body: some View {
+        NavigationView {
+            VStack(alignment: .center) {
+                Spacer()
+                    Button(action: {
+                        self.partialSheet.showPartialSheet({
+                            print("dismissed")
+                        }) {
+                            Text("Partial Sheet")
+                        }
+                    }, label: {
+                        Text("Show Partial Sheet")
+                    })
+                Spacer()
+            }
+            .navigationBarTitle("Partial Sheet")
+        }
+        .navigationViewStyle(StackNavigationViewStyle())
+        .addPartialSheet()
+    }
+}
+
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+    }
+}
+
+```
 Remember to always add `import PartialSheet` in every file you want to use the PartialSheet.
 
-In the **Example** directory you can find more runnable examples with more complex structures.
+In the **Example** directory you can find more examples with more complex structures.
 
-## Version 2
-The new version brings a lot of new features and improvements, but for now I had to drop the compatibility with iOS systems before the 15.0. If you need you can still use the version 2 pointing to the correct tag in the Package Manager.
+
+
+###  Using Pickers
+
+When using pickers it is needed to register an onTapGesture. This some how makes the picker being able to reconize the drag before the dragGesture on the sheet.
+
+```
+struct PickerSheetView: View {
+    var strengths = ["Mild", "Medium", "Mature"]
+    @State private var selectedStrength = 0
+
+    var body: some View {
+        VStack {
+            VStack {
+                Text("Settings Panel").font(.headline)
+                Picker(selection: $selectedStrength, label: EmptyView()) {
+                    ForEach(0 ..< strengths.count) {
+                        Text(self.strengths[$0])
+                    }
+                }.onTapGesture {
+                    // Fixes issue with scroll
+                }
+            }
+            .padding()
+            .frame(height: 250)
+        }
+    }
+}
+```
